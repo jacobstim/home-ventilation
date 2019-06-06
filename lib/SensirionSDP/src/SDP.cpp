@@ -1,27 +1,37 @@
 #include "stdint.h"
-#include <cstdint>
 #include "SDP.h"
 #include "Arduino.h"
 #include "Wire.h"
-//#include "i2c_t3.h" //This library can be download 
+
 #define DEBUG
+#define SERIALOUT Serial
 //#define VERBOSE //Verbose
-//#include "debug_utils.h" //Debug
+
 SDP_Controller::SDP_Controller(){}
+
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 /* PUBLIC FUNCTIONS */
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------------
 /* 
 brief > search the i2c address of the DSP sensor or other sensor which is connected
 param > none
 return > print to serial monitor
 */
+
 void SDP_Controller::getAddress(void){
   byte error, address; //Start Scanning i2C Address
   int nDevices;
   delay(2000);
-  Serial.println();
-  Serial.println("14CORE | i2C Scanner");
+  SERIALOUT.println();
+  SERIALOUT.println("14CORE | i2C Scanner");
   delay(2000);
-  Serial.println("Scanning...");
+  SERIALOUT.println("Scanning...");
   nDevices = 0;
   for(address = 1; address < 127; address++ )
   {
@@ -29,49 +39,49 @@ void SDP_Controller::getAddress(void){
     error = Wire.endTransmission();
     if (error == 0)
     {
-      Serial.println("Default SDP address = 0x25");
-      Serial.print("I2C device found at address 0x");
+      SERIALOUT.println("Default SDP address = 0x25");
+      SERIALOUT.print("I2C device found at address 0x");
       if (address < 16)
-      Serial.print("0");
-      Serial.println(address,HEX);
+      SERIALOUT.print("0");
+      SERIALOUT.println(address,HEX);
       getProductId();
       switch(productId[2]){
         case 0x01:
           if(productId[3] == 0x86){
-            Serial.print("Sensor found: ");
-            Serial.println("SDP800 - 500Pa");
+            SERIALOUT.print("Sensor found: ");
+            SERIALOUT.println("SDP800 - 500Pa");
             this->scaleFactorDiffPressure = 60; // as default
           }
           else{
-            Serial.print("Sensor found: ");
-            Serial.println("SDP31 (500Pa)");
+            SERIALOUT.print("Sensor found: ");
+            SERIALOUT.println("SDP31 (500Pa)");
             this->scaleFactorDiffPressure = 60;
           }
         break;
         case 0x0A:
-          Serial.print("Sensor found: ");
-          Serial.println("SDP810 - 500Pa");
+          SERIALOUT.print("Sensor found: ");
+          SERIALOUT.println("SDP810 - 500Pa");
           this->scaleFactorDiffPressure = 60;
         break;
         case 0x02:
           if(productId[3] == 0x86){
-            Serial.print("Sensor found: ");
-            Serial.println("SDP800 - 125Pa");
+            SERIALOUT.print("Sensor found: ");
+            SERIALOUT.println("SDP800 - 125Pa");
             this->scaleFactorDiffPressure = 240;
           }
           else{
-            Serial.print("Sensor found: ");
-            Serial.println("SDP32 (125Pa)");
+            SERIALOUT.print("Sensor found: ");
+            SERIALOUT.println("SDP32 (125Pa)");
             this->scaleFactorDiffPressure = 240;
           }
         break;
         case 0x0B:
-          Serial.print("Sensor found: ");
-          Serial.println("SDP810 - 125Pa");
+          SERIALOUT.print("Sensor found: ");
+          SERIALOUT.println("SDP810 - 125Pa");
           this->scaleFactorDiffPressure = 240;
         break;
         default:
-          Serial.println("Product ID does not match with the known variants of the sensor");
+          SERIALOUT.println("Product ID does not match with the known variants of the sensor");
           this->scaleFactorDiffPressure = 60; 
         break;
       }
@@ -79,22 +89,25 @@ void SDP_Controller::getAddress(void){
     }
     else if (error==4)
     {
-      Serial.println("Default SDP address = 0x25"); // See the product manual 
-      Serial.print("Unknown error at address 0x");
+      SERIALOUT.println("Default SDP address = 0x25"); // See the product manual 
+      SERIALOUT.print("Unknown error at address 0x");
       if (address<16)
-        Serial.print("0");
-      Serial.println(address,HEX);
+        SERIALOUT.print("0");
+      SERIALOUT.println(address,HEX);
     }
   }
   if (nDevices == 0){
-    Serial.println("Error No I2C devices found\n");
+    SERIALOUT.println("Error No I2C devices found\n");
     delay(5000);
   }
   else{
-    Serial.println("Done\n");
+    SERIALOUT.println("Done\n");
     delay(5000);
   }
 }
+
+// ------------------------------------------------------------------------------------------------
+
 void SDP_Controller::getProductId(void){
   delay(100); // just in case it is called right after a softReset
   //Send and read i2c
@@ -170,17 +183,29 @@ else{
 }
 
 }
+
+// ------------------------------------------------------------------------------------------------
+
 void SDP_Controller::getSerialNumber(void){
 }
-void SDP_Controller::begin(void){
-  //this->getProductId();
-  stopContinuousMeasurement();
-  softReset();
-  delay(20);
-  getProductId();
-  // set values fot scale factors
-  //scaleFactorDiffPressure = this->getPresScaleFactor(productId);
+
+// ------------------------------------------------------------------------------------------------
+
+bool SDP_Controller::begin(void){
+  if(stopContinuousMeasurement()) {
+    // If stopContinuousMeasurement succeeded, we established connection over I2C... 
+    softReset();
+    delay(20);
+    getProductId();
+    // set values fot scale factors
+    //scaleFactorDiffPressure = this->getPresScaleFactor(productId);
+    return true;
+  }
+  return false;
 }
+
+
+// ------------------------------------------------------------------------------------------------
 /*
 > Set the sensor to continuous measurement mode
  */
@@ -209,10 +234,17 @@ void SDP_Controller::startContinuousMeasurement(SdpTempComp tempComp,SdpAveragin
   }
 }
 
+// ------------------------------------------------------------------------------------------------
 /* Stops continuous measurement mode, returns sensor to idle */
-void SDP_Controller::stopContinuousMeasurement(void){
-  sendCommand(COMMAND_STOP_CONTINOUS_MEASUREMENT);
+bool SDP_Controller::stopContinuousMeasurement(void){
+  Error result = sendCommand(COMMAND_STOP_CONTINOUS_MEASUREMENT);
+  if (result != ERROR_NONE) {
+    return false;
+  }
+  return true;
 }
+
+// ------------------------------------------------------------------------------------------------
 /*
 brief  > Get triggered temperature reading, works only if sensor in idle mode
 return > float with triggered temperature value
@@ -253,6 +285,7 @@ int16_t result = BIU16(this->dataBuffer,3);
 return result/(float)200;
 }
 
+// ------------------------------------------------------------------------------------------------
 /*
 Get triggered differential pressure reading, works only if sensor is in idle mode
  return -> float with triggered differential pressure value
@@ -298,6 +331,8 @@ return result/(float)60;
     DEBUG_PRINT("getDiffPressureTrigger(tempComp,averaging) failed");
   }*/
 }
+
+// ------------------------------------------------------------------------------------------------
 /*
 Get continuous mode reading diffPressure, needs continous mode
 eturn > float with continuous differential pressure value
@@ -312,6 +347,8 @@ float SDP_Controller::getDiffPressure(void){
     DEBUG_PRINT("getDiffPressure() failed");
   }
 }
+
+// ------------------------------------------------------------------------------------------------
 /*
 brief  > Get continuous mode reading diffPressure
 param  > Atmosferic pressure to compensate measurement (float)
@@ -326,6 +363,8 @@ float SDP_Controller::getDiffPressure(float atmPressure){
     DEBUG_PRINT("getDiffPressure(atmPressure) failed");
   }
 }
+
+// ------------------------------------------------------------------------------------------------
 /*
 brief  >Set to get continuous mode reading diffPressure
 param  > Atmosferic pressure to compensate measurement (double)
@@ -339,6 +378,8 @@ float SDP_Controller::getDiffPressure(double atmPressure){
     return 0;
   }
 }
+
+// ------------------------------------------------------------------------------------------------
 /*
 brief  > Get continuous mode reading of temperature, needs continuous mode
 return > Float with continuous temperature value
@@ -349,6 +390,7 @@ float SDP_Controller::getTemperature(void){
   return (int16_t)BIU16(this->dataBuffer,3)/(float)200;
 }
 
+// ------------------------------------------------------------------------------------------------
 /*
 brief  > set to get only continuous mode reading of temperature, needs continuous mode
 param  > none
@@ -359,14 +401,28 @@ float SDP_Controller::getOnlyTemperature(void){
   readSequence();
   return (int16_t)BIU16(this->dataBuffer,3)/(float)200;
 }
+
+// ------------------------------------------------------------------------------------------------
+
 void SDP_Controller::softReset(void){
   sendCommand(COMMAND_SOFT_RESET); //Soft reset sent to the sensor
 }
+
+// ------------------------------------------------------------------------------------------------
+
 void SDP_Controller::enterSleep(void){
   sendCommand(COMMAND_ENTER_SLEEP_MODE); //Set the sensor sleep mode lower down the energy consumption
 }
+
+// ------------------------------------------------------------------------------------------------
+
 void SDP_Controller::exitSleep(void){ //See the product manual
 }
+
+
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /* PRIVATE FUNCTIONS */
 bool SDP_Controller::CheckCrc(uint8_t data[], uint8_t posInit, uint8_t checksum){
@@ -388,6 +444,9 @@ bool SDP_Controller::CheckCrc(uint8_t data[], uint8_t posInit, uint8_t checksum)
     return false;
   }
 }
+
+
+// ------------------------------------------------------------------------------------------------
 /*
 brief  > checks all the crcs of the sequence received
 param  > sequence vector, length of
@@ -402,6 +461,9 @@ bool SDP_Controller::checkCrcRoutine(uint8_t idBuffer[]){
   }
   return result;
 }
+
+
+// ------------------------------------------------------------------------------------------------
 /*
 brief  > hal function for sending the i2c commands
 param  > Command type for abstraction
@@ -416,6 +478,8 @@ Error SDP_Controller::sendCommand(Command cmd){
   //Error error = setError(Wire.endTransmission());
   return error;
 }
+
+// ------------------------------------------------------------------------------------------------
 
 Error SDP_Controller::setError(uint8_t errorByte){
   Error error;
@@ -445,6 +509,9 @@ Error SDP_Controller::setError(uint8_t errorByte){
     }
   return error;
 }
+
+
+// ------------------------------------------------------------------------------------------------
 /*
 brief  > Set to reads i2c rx sequence and saves it in dataBuffer
 */
@@ -463,6 +530,8 @@ Error SDP_Controller::readSequence(){
     return ERROR_NONE;
   }
 }
+
+// ------------------------------------------------------------------------------------------------
 Error SDP_Controller::readIdSequence(){
   uint8_t rxByteCount = 0;
   Wire.requestFrom((uint8_t)DEFAULT_SDP_ADDRESS, (uint8_t) 18); //Correct number of bytes to read
@@ -479,11 +548,14 @@ Error SDP_Controller::readIdSequence(){
     return ERROR_NONE;
   }
 }
+
+
+// ------------------------------------------------------------------------------------------------
 /*
 brief  > Set to 0btain the correct scale factor for the model of sensor
 param  > none
 return > float with the scaleFactor
- */
+
 float SDP_Controller::getPresScaleFactor(uint8_t productId[]){ 
   switch (productId[3]) {
     case SDP800_500Pa:
@@ -506,3 +578,4 @@ float SDP_Controller::getPresScaleFactor(uint8_t productId[]){
     break;
   }
 }
+ */

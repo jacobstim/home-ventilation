@@ -11,7 +11,7 @@
 #include "Wire.h"
 
 // Function declarations
-void pressureInit();
+bool pressureInit();
 void pressureMeasure();
 
 #endif

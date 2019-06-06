@@ -24,9 +24,10 @@ int cmdSize = 0;                                    // How much data we have in 
 // Prepares serial port for reading
 // ---------------------------------------------------------------------------
 
-void zehnderInit() {
+bool zehnderInit() {
     DEBUGOUT.println(F("Init Zehnder Serial port..."));
     zehnderPort.begin(ZEHNDER_BAUDRATE, SERIAL_8N1 );
+    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,9 +58,9 @@ void checkCommand() {
 
             // Command found?
             if (cmdSize > 0) {
-                DEBUGOUT.print("### CMDSIZE: ");
-                DEBUGOUT.print(cmdSize);
-                DEBUGOUT.print(" / CMDBUFFER: ");
+                //DEBUGOUT.print("### CMDSIZE: ");
+                //DEBUGOUT.print(cmdSize);
+                //DEBUGOUT.print(" / CMDBUFFER: ");
                 dumpByteArray(cmdBuffer, cmdSize);
                 processCommand();
             }          
@@ -105,7 +106,7 @@ bool processCommand() {
     String cmdString = byteToHexString(cmdByte2);
     String cmdData = "";
     
-    DEBUGOUT.print(F("CMD = 0x")); DEBUGOUT.print(cmdString);
+    DEBUGOUT.print(F("Zehnder ComfoD450 CMD = 0x")); DEBUGOUT.print(cmdString);
 
     bool parsed = false;
     
@@ -122,11 +123,11 @@ bool processCommand() {
             //       Byte[4] - T3 / Abluft (°C*)
             //       Byte[5] - T4 / Fortluft (°C*)
             cmdData = "t_comfort=" + String(getTemperature(cmdBuffer[5])) + ",t1_intake=" + String(getTemperature(cmdBuffer[6])) + ",t2_tohome=" + String(getTemperature(cmdBuffer[7])) + ",t3_fromhome=" + String(getTemperature(cmdBuffer[8])) + ",t4_exhaust=" + String(getTemperature(cmdBuffer[9]));
-            DEBUGOUT.print(" - "); DEBUGOUT.println(cmdData);
+            DEBUGOUT.print(F("-> ReadTemperatures Extended: ")); DEBUGOUT.println(cmdData);
             parsed = true;
             break;
         default :
-            DEBUGOUT.println(F(" - Not parsed"));
+            DEBUGOUT.println(F("-> Not parsed"));
     }
 
     if (parsed) {

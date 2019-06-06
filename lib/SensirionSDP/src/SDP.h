@@ -145,9 +145,9 @@ public:
 	void getAddress(void);
 	void getProductId(void);
 	void getSerialNumber(void);
-	void begin(void);
+	bool begin(void);
 	void startContinuousMeasurement(SdpTempComp tempComp, SdpAveraging averaging);
-	void stopContinuousMeasurement(void);
+	bool stopContinuousMeasurement(void);
 	float getTemperatureTrigger(SdpTempComp tempComp, SdpClockStretching clkSt);
 	float getDiffPressureTrigger(SdpTempComp tempComp, SdpClockStretching clkSt);
 	float getTemperature(void);
@@ -170,7 +170,7 @@ private:
 	bool CheckCrc(uint8_t data[], uint8_t posInit, uint8_t checksum);
 	bool checkCrcRoutine(uint8_t idBuffer[]);
 	
-	float getPresScaleFactor(uint8_t productId[]);
+	//float getPresScaleFactor(uint8_t productId[]);
 	Error setError(uint8_t errorByte);
 
 	// Data fields for each instance of the class

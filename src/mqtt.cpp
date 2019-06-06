@@ -26,15 +26,20 @@ void mqttInit() {
     DEBUGOUT.println(F("Preparing MQTT client..."));
     mqttClient.setServer(netMQTTServer_DNS, MQTTPORT);
     mqttClient.setCallback(mqttCallback);
+    lastReconnectAttempt = -5000;
 }
 
 // Publish a payload to the MQTTPUBTOPIC_DATA topic
 boolean mqttPublishData(String payload) {
+  return mqttPublishData(payload,MQTTPUBTOPIC_DATA);
+}
+
+boolean mqttPublishData(String payload, const char* topic) {
     // Publish data to MQTT queue
     if (mqttClient.connected()) {
         char __dataOut[MQTT_MAX_PACKET_SIZE];
         payload.toCharArray(__dataOut, MQTT_MAX_PACKET_SIZE);
-        if(mqttClient.publish(MQTTPUBTOPIC_DATA,__dataOut)) {
+        if(mqttClient.publish(topic,__dataOut)) {
             return true;
         };
         DEBUGOUT.println(F("ERROR: Failed to publish to MQTT server!"));

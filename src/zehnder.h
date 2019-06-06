@@ -26,7 +26,7 @@ const byte cacmd_StartCMD[] = { 0x07, 0xF0 };
 const byte cacmd_StopCMD[] = { 0x07, 0x0F };
 
 // Function declarations
-void zehnderInit();
+bool zehnderInit();
 void checkCommand();
 bool processCommand();
 float getTemperature(byte zehnderTemp);

@@ -4,20 +4,24 @@
   ============================================================================= */
 
 #include "pressure.h"
+#include "mqtt.h"
 
 SDP_Controller SDP810;
 double measure_diffpressure = 0;
 double measure_temperature = 0; 
 
-void pressureInit() {
+bool pressureInit() {
     // Initialize I2C
     DEBUGOUT.println(F("Init I2C communications..."));
     Wire.begin();
 
     // Initialize pressure sensor + trigger measurement mode on sensor
     DEBUGOUT.println(F("Init SDP810 pressure sensor..."));
-    SDP810.begin();
+    if(!SDP810.begin()) {
+        return false;
+    }
     SDP810.startContinuousMeasurement(SDP_TEMPCOMP_DIFFERENTIAL_PRESSURE, SDP_AVERAGING_TILL_READ);
+    return true;
 }
 
 void pressureMeasure() {
@@ -26,4 +30,8 @@ void pressureMeasure() {
     measure_temperature = SDP810.getTemperature();
     DEBUGOUT.print(F("-> Diff.Pressure : ")); DEBUGOUT.println(measure_diffpressure,6);
     DEBUGOUT.print(F("-> Temperature   : ")); DEBUGOUT.println(measure_temperature,6);
+
+    String outputData = "command=DP dp1_filterbox=" + String(measure_diffpressure, 6) + ",dp1_temp=" + String(measure_temperature, 6);
+    //DEBUGOUT.println(outputData);
+    mqttPublishData(outputData, MQTTPUBTOPIC_PRESSURE);
 }
