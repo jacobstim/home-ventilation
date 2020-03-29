@@ -5,6 +5,10 @@
 
 #include "pressure.h"
 #include "mqtt.h"
+#include "main.h"
+
+// Measurement store
+extern dataManager ourMeasurements;
 
 SDP_Controller SDP810;
 double measure_diffpressure = 0;
@@ -31,7 +35,7 @@ void pressureMeasure() {
     DEBUGOUT.print(F("-> Diff.Pressure : ")); DEBUGOUT.println(measure_diffpressure,6);
     DEBUGOUT.print(F("-> Temperature   : ")); DEBUGOUT.println(measure_temperature,6);
 
-    String outputData = "command=DP dp1_filterbox=" + String(measure_diffpressure, 6) + ",dp1_temp=" + String(measure_temperature, 6);
-    //DEBUGOUT.println(outputData);
-    mqttPublishData(outputData, MQTTPUBTOPIC_PRESSURE);
+    ourMeasurements.airPressure_sum += measure_diffpressure;
+    ourMeasurements.airTemperature_sum += measure_temperature;
+    ourMeasurements.air_count += 1;
 }

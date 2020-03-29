@@ -5,6 +5,7 @@
 
 #include "zehnder.h"
 #include "mqtt.h"
+#include "main.h"
 
 // Zehnder serial definitions
 HardwareSerial& zehnderPort = ZEHNDER_PORT;
@@ -17,6 +18,9 @@ int processSize = 0;                                // How much data we have in 
 #define CMDBUFFERSIZE CACMD_MAXLENGTH
 byte cmdBuffer[CMDBUFFERSIZE];                      // Our command buffer for parsing
 int cmdSize = 0;                                    // How much data we have in the cmdBuffer
+
+// Measurement store
+extern dataManager ourMeasurements;
 
 // ---------------------------------------------------------------------------
 // ZEHNDERINIT
@@ -107,8 +111,6 @@ bool processCommand() {
     String cmdData = "";
     
     DEBUGOUT.print(F("Zehnder ComfoD450 CMD = 0x")); DEBUGOUT.print(cmdString);
-
-    bool parsed = false;
     
     switch(cmdByte2) {
         case 0xD2:
@@ -122,17 +124,40 @@ bool processCommand() {
             //       Byte[3] - T2 / Zuluft (°C*)
             //       Byte[4] - T3 / Abluft (°C*)
             //       Byte[5] - T4 / Fortluft (°C*)
-            cmdData = "t_comfort=" + String(getTemperature(cmdBuffer[5])) + ",t1_intake=" + String(getTemperature(cmdBuffer[6])) + ",t2_tohome=" + String(getTemperature(cmdBuffer[7])) + ",t3_fromhome=" + String(getTemperature(cmdBuffer[8])) + ",t4_exhaust=" + String(getTemperature(cmdBuffer[9]));
-            DEBUGOUT.print(F("-> ReadTemperatures Extended: ")); DEBUGOUT.println(cmdData);
-            parsed = true;
+            float newT0 = getTemperature(cmdBuffer[5]);       // t_comfort
+            if(newT0 > -20) {
+                ourMeasurements.t_comfort_sum += newT0;
+                ourMeasurements.t_comfort_count += 1;
+            }
+            float newT1 = getTemperature(cmdBuffer[6]);       // t1_intake
+            if(newT1 > -20) {
+                ourMeasurements.t1_intake_sum += newT1;
+                ourMeasurements.t1_count += 1;
+            }
+            float newT2 = getTemperature(cmdBuffer[7]);       // t2_tohome
+            if(newT2 > -20) {
+                ourMeasurements.t2_tohome_sum += newT2;
+                ourMeasurements.t2_count += 1;
+            }
+            float newT3 = getTemperature(cmdBuffer[7]);       // t3_fromhome
+            if(newT3 > -20) {
+                ourMeasurements.t3_fromhome_sum += newT3;
+                ourMeasurements.t3_count += 1;
+            }
+            float newT4 = getTemperature(cmdBuffer[7]);       // t4_exhaust
+            if(newT4 > -20) {
+                ourMeasurements.t4_exhaust_sum += newT4;
+                ourMeasurements.t4_count += 1;
+            }
+            DEBUGOUT.print(F("-> ReadTemperatures Extended: ")); 
+                DEBUGOUT.print("TComfort="); DEBUGOUT.print(newT0,2);
+                DEBUGOUT.print("/ T1Intake="); DEBUGOUT.print(newT1,2);
+                DEBUGOUT.print("/ T2ToHome="); DEBUGOUT.print(newT2,2);
+                DEBUGOUT.print("/ T3FromHome="); DEBUGOUT.print(newT3,2);
+                DEBUGOUT.print("/ T4Exhaust="); DEBUGOUT.print(newT4,2);
             break;
         default :
             DEBUGOUT.println(F("-> Not parsed"));
-    }
-
-    if (parsed) {
-        String dataOut = String("command=" + cmdString + " " + cmdData);
-        mqttPublishData(dataOut);   
     }
     return true;
 }

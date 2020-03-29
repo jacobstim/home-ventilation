@@ -31,7 +31,7 @@ void mqttInit() {
 
 // Publish a payload to the MQTTPUBTOPIC_DATA topic
 boolean mqttPublishData(String payload) {
-  return mqttPublishData(payload,MQTTPUBTOPIC_DATA);
+  return mqttPublishData(payload, MQTTPUBTOPIC_DATA);
 }
 
 boolean mqttPublishData(String payload, const char* topic) {

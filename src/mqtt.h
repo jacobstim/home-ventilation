@@ -18,11 +18,10 @@
 // MQTT Topics
 #define MQTTPUBTOPIC_SYSTEM "smarthome/ventilation/zehnder450D/system"            // Publish system messages here
 #define MQTTPUBTOPIC_DATA "smarthome/ventilation/zehnder450D/data"                // Publish ComfoD measurements here
-#define MQTTPUBTOPIC_PRESSURE "smarthome/ventilation/zehnder450D/pressure"        // Publish pressure sensor measurements here
 #define MQTTSUBTOPIC "smarthome/ventilation/zehnder450D/board"                    // Subscribe here
 
 // MQTT Messages
-#define MQTT_MSG_CONNECTIONOK "command=00 status=1"
+#define MQTT_MSG_CONNECTIONOK "{ \"msgtype\": \"connected\" }"
 
 // Function declarations
 void mqttInit();
